@@ -1,0 +1,100 @@
+SD状态	
+现象描述
+/mnt/sdcard目录是否存在
+canRead返回
+canWrite返回
+在/mnt/sdcard创建文件
+在/mnt/sdcard创建文件夹
+MEDIA_MOUNTED
+SD卡正常挂载
+TRUE
+TRUE
+TRUE
+TRUE
+TRUE
+MEDIA_REMOVED
+无介质
+TRUE
+FALSE
+FALSE
+false:  原因Permission denied
+FALSE
+MEDIA_UNMOUNTED
+有介质，未挂载，在系统中删除
+TRUE
+FALSE
+FALSE
+false:  原因Permission denied
+FALSE
+MEDIA_BAD_REMOVAL
+介质在挂载前被移除，直接取出SD卡
+TRUE
+FALSE
+FALSE
+false:  原因Permission denied
+FALSE
+MEDIA_CHECKING
+正在磁盘检查，刚装上SD卡时
+TRUE
+FALSE
+FALSE
+false:  原因Permission denied
+FALSE
+MEDIA_SHARED
+SD卡存在但没有挂载，并且通过USB大容量存储共享，操作打开USB存储
+TRUE
+FALSE
+FALSE
+false:  原因Permission denied
+FALSE
+MEDIA_MOUNTED_READ_ONLY
+sd卡存在并且已挂载，但是挂载方式为只读
+-
+-
+无法模拟，SD卡不允许修改权限
+MEDIA_NOFS	
+介质存在但是为空白或用在不支持的文件系统
+-
+-
+无法模拟，SD卡格式化后再加载会自动生成系统文件
+MEDIA_UNMOUNTABLE	
+存在SD卡但是不能挂载，例如发生在介质损坏
+-
+-
+无法模拟
+
+通过上表可以看出，只有在SD卡状态为MEDIA_MOUNTED时/mnt/sdcard目录才是可读可写，并且可以创建目录及文件。
+所以我们读取SD卡时一般会这么写：
+?
+ 
+01
+02
+03
+04
+05
+06
+String state;
+String path;
+state = Environment.getExternalStorageState();
+if(state.equals(Environment.MEDIA_MOUNTED))｛
+path = Environment.getExternalStorageDirectory().getAbsolutePath();
+｝
+
+
+读写SD卡记得加这两个权限：
+?
+ 
+01
+02
+<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>
+   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+ 
+* 1 在AndroidManifest文件中加入sdcard操作权限
+　　* <!--在SDCard中创建与删除文件权限 -->
+　　* <uses-permissioandroid:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/> 
+　　* <!--往SDCard写入数据权限 --> 
+　　* <uses-permissionandroid:name="android.permission.WRITE_EXTERNAL_STORAGE"/> 
+* 2 确认sdcard的存在
+　　* android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED)
+* 3 获取扩展存储设备的文件目录
+　　* android.os.Environment.getExternalStorageDirectory();

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<!-- saved from url=(0067)http://www.pedant.cn/2014/07/04/webview-js-java-interface-research/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  
+  <title>在WebView中如何让JS与Java安全地互相调用 | 书呆子精神院</title>
+  <meta name="author" content="Yanyuetian">
+  
+  <meta name="description" content="在现在安卓应用原生开发中，为了追求开发的效率以及移植的便利性，使用WebView作为业务内容展示与交互的主要载体是个不错的折中方案。那么在这种Hybrid(混合式) App中，难免就会遇到页面JS需要与Java相互调用，调用Java方法去做那部分网页JS不能完成的功能。">
+  
+  
+  <meta name="keywords" content="java调用js方法,js调用java方法,安卓安全,addjavascriptInterface风险问题,js脚本注入,js函数异步回调,WebChromeClient实例,webview中调用,webview执行">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:title" content="在WebView中如何让JS与Java安全地互相调用">
+  <meta property="og:site_name" content="书呆子精神院">
+  
+  <meta property="og:image" content="undefined">
+  
+  <link href="http://www.pedant.cn/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="stylesheet" href="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+<script type="text/javascript" async="" src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/embed.js" charset="UTF-8"></script><script src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/share.js"></script><link type="text/css" rel="stylesheet" href="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/embed.default.css"><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Hover_Arrow {position: absolute; width: 15px; height: 11px; cursor: pointer}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; color: #666666}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_Menu_Close {position: absolute; width: 31px; height: 31px; top: -15px; left: -15px}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1em; bottom: 1.5em; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><link rel="stylesheet" href="http://bdimg.share.baidu.com/static/api/css/slide_share.css?v=0c86db4f.css"></head>
+
+
+<body><div id="MathJax_Message" style="display: none;"></div>
+  <header id="header" class="inner"><div class="blog-header">
+  <h1><a href="http://www.pedant.cn/">书呆子精神院</a></h1>
+  <h2>一起发呆，一起发疯</h2>
+</div>
+<nav id="main-nav" class="blog-nav">
+  <ul>
+    
+      <li><a href="http://www.pedant.cn/">首页</a></li>
+    
+      <li><a href="http://www.pedant.cn/archives">归档</a></li>
+    
+      <li><a href="http://www.pedant.cn/about">关于</a></li>
+    
+    <li> <a href="http://www.pedant.cn/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    
+      <div id="main-col" class="alignleft"><div id="wrapper"><article class="android">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-04T06:53:54.000Z"><a href="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/在WebView中如何让JS与Java安全地互相调用   书呆子精神院.htm">7月04 2014</a></time>
+      
+      
+  
+    <h1 class="title">在WebView中如何让JS与Java安全地互相调用</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在现在安卓应用原生开发中，为了追求开发的效率以及移植的便利性，使用WebView作为业务内容展示与交互的主要载体是个不错的折中方案。那么在这种Hybrid(混合式) App中，难免就会遇到页面JS需要与Java相互调用，调用Java方法去做那部分网页JS不能完成的功能。</p>
+<a id="more"></a>
+
+<p>网上的方法可以告诉我们这个时候我们可以使用<strong>addjavascriptInterface</strong>来注入原生接口到JS中，但是在安卓4.2以下的系统中，这种方案却我们的应用带来了很大的安全风险。攻击者如果在页面执行一些非法的JS（诱导用户打开一些钓鱼网站以进入风险页面），极有可能反弹拿到用户手机的shell权限。接下来攻击者就可以在后台默默安装木马，完全洞穿用户的手机。详细的攻击过程可以见乌云平台的这份报告：<a href="http://drops.wooyun.org/papers/548" target="_blank" rel="external">WebView中接口隐患与手机挂马利用</a>。</p>
+<p>安卓4.2及以上版本（API &gt;= 17），在注入类中为可调用的方法添加@JavascriptInterface注解，无注解的方法不能被调用，这种方式可以防范注入漏洞。那么有没一种安全的方式，可以完全兼顾安卓4.2以下版本呢？答案就是使用prompt，即WebChromeClient 输入框弹出模式。</p>
+<p>我们参照 <a href="http://blog.csdn.net/leehong2005/article/details/11808557" target="_blank" rel="external">Android WebView的Js对象注入漏洞解决方案</a> 这篇文章给出的解决方案， 但它JS下的方法有点笨拙， 动态生成JS文件过程也并没有清晰，且加载JS文件的时机也没有准确把握。那么如何改造才能便利地在JS代码中调用Java方法，并且安全可靠呢？</p>
+<p>下面提到的<strong>源码及项目</strong>可以在这找到<a href="https://github.com/pedant/safe-java-js-webview-bridge" target="_blank" rel="external">Safe Java-JS Bridge In Android WebView[Github]</a>。</p>
+<h3 id="一、动态地生成将注入的JS代码">一、动态地生成将注入的JS代码</h3>
+<p>JsCallJava在构造时，将要注入类的public且static方法拿出来，逐个生成方法的签名，依据方法签名先将方法缓存起来，同时结合方法名称与静态的HostApp-JS代码动态生成一段将要注入到webview中的字符串。</p>
+<figure class="highlight JAVA"><figcaption><span>JsCallJava.java</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+</pre></td><td class="code"><pre><span class="keyword">public</span> <span class="title">JsCallJava</span> (String injectedName, Class injectedCls) {
+    <span class="keyword">try</span> {
+        mMethodsMap = <span class="keyword">new</span> HashMap&lt;String, Method&gt;();
+        <span class="comment">//获取自身声明的所有方法（包括public private protected）， getMethods会获得所有继承与非继承的方法</span>
+        Method[] methods = injectedCls.getDeclaredMethods();
+        StringBuilder sb = <span class="keyword">new</span> StringBuilder(<span class="string">"javascript:(function(b){console.log(\"HostApp initialization begin\");var a={queue:[],callback:function(){var d=Array.prototype.slice.call(arguments,0);var c=d.shift();var e=d.shift();this.queue[c].apply(this,d);if(!e){delete this.queue[c]}}};"</span>);
+
+        <span class="keyword">for</span> (Method method : methods) {
+            String sign;
+            <span class="keyword">if</span> (method.getModifiers() != (Modifier.PUBLIC | Modifier.STATIC) || (sign = genJavaMethodSign(method)) == <span class="keyword">null</span>) {
+                <span class="keyword">continue</span>;
+            }
+            mMethodsMap.put(sign, method);
+            sb.append(String.format(<span class="string">"a.%s="</span>, method.getName()));
+        }
+
+        sb.append(<span class="string">"function(){var f=Array.prototype.slice.call(arguments,0);if(f.length&lt;1){throw\"HostApp call error, message:miss method name\"}var e=[];for(var h=1;h&lt;f.length;h++){var c=f[h];var j=typeof c;e[e.length]=j;if(j==\"function\"){var d=a.queue.length;a.queue[d]=c;f[h]=d}}var g=JSON.parse(prompt(JSON.stringify({method:f.shift(),types:e,args:f})));if(g.code!=200){throw\"HostApp call error, code:\"+g.code+\", message:\"+g.result}return g.result};Object.getOwnPropertyNames(a).forEach(function(d){var c=a[d];if(typeof c===\"function\"&amp;&amp;d!==\"callback\"){a[d]=function(){return c.apply(a,[d].concat(Array.prototype.slice.call(arguments,0)))}}});b."</span> + injectedName + <span class="string">"=a;console.log(\"HostApp initialization end\")})(window);"</span>);
+        mPreloadInterfaceJS = sb.toString();
+    } <span class="keyword">catch</span>(Exception e){
+        Log.e(TAG, <span class="string">"init js error:"</span> + e.getMessage());
+    }
+}
+
+<span class="keyword">private</span> String <span class="title">genJavaMethodSign</span> (Method method) {
+    String sign = method.getName();
+    Class[] argsTypes = method.getParameterTypes();
+    <span class="keyword">int</span> len = argsTypes.length;
+    <span class="keyword">if</span> (len &lt; <span class="number">1</span> || argsTypes[<span class="number">0</span>] != WebView.class) {
+        Log.w(TAG, <span class="string">"method("</span> + sign + <span class="string">") must use webview to be first parameter, will be pass"</span>);
+        <span class="keyword">return</span> <span class="keyword">null</span>;
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt; len; k++) {
+        Class cls = argsTypes[k];
+        <span class="keyword">if</span> (cls == String.class) {
+            sign += <span class="string">"_S"</span>;
+        } <span class="keyword">else</span> <span class="keyword">if</span> (cls == <span class="keyword">int</span>.class ||
+            cls == <span class="keyword">long</span>.class ||
+            cls == <span class="keyword">float</span>.class ||
+            cls == <span class="keyword">double</span>.class) {
+            sign += <span class="string">"_N"</span>;
+        } <span class="keyword">else</span> <span class="keyword">if</span> (cls == <span class="keyword">boolean</span>.class) {
+            sign += <span class="string">"_B"</span>;
+        } <span class="keyword">else</span> <span class="keyword">if</span> (cls == JSONObject.class) {
+            sign += <span class="string">"_O"</span>;
+        } <span class="keyword">else</span> <span class="keyword">if</span> (cls == JsCallback.class) {
+            sign += <span class="string">"_F"</span>;
+        } <span class="keyword">else</span> {
+            sign += <span class="string">"_P"</span>;
+        }
+    }
+    <span class="keyword">return</span> sign;
+}
+</pre></td></tr></tbody></table></figure>
+
+<p>从上面可以看出，类的各个方法名称被拼接到前后两段静态压缩的JS代码当中，那么这样生成的完整清晰的HostApp-JS片段是怎样的呢？ 我们假设HostJsScope类中目前只定义了toast、alert、getIMSI这三个公开静态方法，那么完整的片段就是下面这样：</p>
+<figure class="highlight JAVASCRIPT"><figcaption><span>HostApp JS片段</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+</pre></td><td class="code"><pre>(<span class="function"><span class="keyword">function</span><span class="params">(global)</span>{</span>
+    console.log(<span class="string">"HostApp initialization begin"</span>);
+    <span class="keyword">var</span> hostApp = {
+        queue: [],
+        callback: <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+            <span class="keyword">var</span> args = <span class="built_in">Array</span>.prototype.slice.call(<span class="built_in">arguments</span>, <span class="number">0</span>);
+            <span class="keyword">var</span> index = args.shift();
+            <span class="keyword">var</span> isPermanent = args.shift();
+            <span class="keyword">this</span>.queue[index].apply(<span class="keyword">this</span>, args);
+            <span class="keyword">if</span> (!isPermanent) {
+                <span class="keyword">delete</span> <span class="keyword">this</span>.queue[index];
+            }
+        }
+    };
+    hostApp.toast = hostApp.alert = hostApp.getIMSI = <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+        <span class="keyword">var</span> args = <span class="built_in">Array</span>.prototype.slice.call(<span class="built_in">arguments</span>, <span class="number">0</span>);
+        <span class="keyword">if</span> (args.length &lt; <span class="number">1</span>) {
+            <span class="keyword">throw</span> <span class="string">"HostApp call error, message:miss method name"</span>;
+        }
+        <span class="keyword">var</span> aTypes = [];
+        <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">1</span>;i &lt; args.length;i++) {
+            <span class="keyword">var</span> arg = args[i];
+            <span class="keyword">var</span> type = <span class="keyword">typeof</span> arg;
+            aTypes[aTypes.length] = type;
+            <span class="keyword">if</span> (type == <span class="string">"function"</span>) {
+                <span class="keyword">var</span> index = hostApp.queue.length;
+                hostApp.queue[index] = arg;
+                args[i] = index;
+            }
+        }
+        <span class="keyword">var</span> res = <span class="built_in">JSON</span>.parse(prompt(<span class="built_in">JSON</span>.stringify({
+            method: args.shift(),
+            types: aTypes,
+            args: args
+        })));
+
+        <span class="keyword">if</span> (res.code != <span class="number">200</span>) {
+            <span class="keyword">throw</span> <span class="string">"HostApp call error, code:"</span> + res.code + <span class="string">", message:"</span> + res.result;
+        }
+        <span class="keyword">return</span> res.result;
+    };
+
+    <span class="comment">//有时候，我们希望在该方法执行前插入一些其他的行为用来检查当前状态或是监测</span>
+    <span class="comment">//代码行为，这就要用到拦截（Interception）或者叫注入（Injection）技术了</span>
+    <span class="comment">/**
+     * Object.getOwnPropertyName 返回一个数组，内容是指定对象的所有属性
+     *
+     * 其后遍历这个数组，分别做以下处理：
+     * 1. 备份原始属性；
+     * 2. 检查属性是否为 function（即方法）；
+     * 3. 若是重新定义该方法，做你需要做的事情，之后 apply 原来的方法体。
+     */</span>
+    <span class="built_in">Object</span>.getOwnPropertyNames(hostApp).forEach(<span class="function"><span class="keyword">function</span> <span class="params">(property)</span> {</span>
+        <span class="keyword">var</span> original = hostApp[property];
+
+        <span class="keyword">if</span> (<span class="keyword">typeof</span> original === <span class="string">'function'</span>&amp;&amp;property!==<span class="string">"callback"</span>) {
+            hostApp[property] = <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+                <span class="keyword">return</span> original.apply(hostApp,  [property].concat(<span class="built_in">Array</span>.prototype.slice.call(<span class="built_in">arguments</span>, <span class="number">0</span>)));
+            };
+        }
+    });
+    global.HostApp = hostApp;
+    console.log(<span class="string">"HostApp initialization end"</span>);
+})(window);
+</pre></td></tr></tbody></table></figure>
+
+<p>其实在JsCallJava初始化时我们拼接的只是上面第15行 <em>hostApp.toast = hostApp.alert = hostApp.getIMSI = function ()</em> 这段。目的是将所有JS层调用函数嫁接到一个匿名函数1中，而后利用拦截技术，遍历hostApp下所有的函数，拿出对应的函数名，然后将hostApp下所有的函数调用嫁接到另一个匿名函数2，这样做的目的是hostApp下函数调用时首先执行匿名函数2，匿名函数2将对应的函数名作为第一个参数然后再调用匿名函数1，这样匿名函数1中就能区分执行时调用来源。实现了JS层<strong>调用入口统一，返回出口统一</strong>的结构体系。</p>
+<h3 id="二、HostApp_JS片段注入时机">二、HostApp JS片段注入时机</h3>
+<p>步骤一说明了HostApp-JS片段的拼接方法，同时JS片段拼接是在JsCallJava初始化完成的，而JsCallJava初始化是在实例化InjectedChromeClient对象时发起的。</p>
+<figure class="highlight JAVA"><figcaption><span>InjectedChromeClient.java</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre><span class="keyword">public</span> <span class="title">InjectedChromeClient</span> (String injectedName, Class injectedCls) {
+    mJsCallJava = <span class="keyword">new</span> JsCallJava(injectedName, injectedCls);
+}
+</pre></td></tr></tbody></table></figure><br>从步骤一的代码，我们知道JsCallJava拼接出来的JS代码暂时被存到mPreloadInterfaceJS字段中。那么我们何时把这段代码串注入到Webview的页面空间内呢？答案是页面加载进度变化的过程中。<br><figure class="highlight JAVA"><figcaption><span>InjectedChromeClient.java</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre><span class="annotation">@Override</span>
+<span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onProgressChanged</span> (WebView view, <span class="keyword">int</span> newProgress) {
+    <span class="comment">//为什么要在这里注入JS</span>
+    <span class="comment">//1 OnPageStarted中注入有可能全局注入不成功，导致页面脚本上所有接口任何时候都不可用</span>
+    <span class="comment">//2 OnPageFinished中注入，虽然最后都会全局注入成功，但是完成时间有可能太晚，当页面在初始化调用接口函数时会等待时间过长</span>
+    <span class="comment">//3 在进度变化时注入，刚好可以在上面两个问题中得到一个折中处理</span>
+    <span class="comment">//为什么是进度大于25%才进行注入，因为从测试看来只有进度大于这个数字页面才真正得到框架刷新加载，保证100%注入成功</span>
+    <span class="keyword">if</span> (newProgress &lt;= <span class="number">25</span>) {
+        mIsInjectedJS = <span class="keyword">false</span>;
+    } <span class="keyword">else</span> <span class="keyword">if</span> (!mIsInjectedJS) {
+        view.loadUrl(mJsCallJava.getPreloadInterfaceJS());
+        mIsInjectedJS = <span class="keyword">true</span>;
+        Log.d(TAG, <span class="string">" inject js interface completely on progress "</span> + newProgress);
+
+    }
+    <span class="keyword">super</span>.onProgressChanged(view, newProgress);
+}
+</pre></td></tr></tbody></table></figure>
+
+<p>从上面我们可以看出，注入的时机是准确把握在进度大于25%时。如果在OnPageFinished注入，页面document.ready的初始回调会等待时间过长，详细的原因我们会在后面讲到。</p>
+<h3 id="三、页面调用Java方法执行的过程">三、页面调用Java方法执行的过程</h3>
+<p>OK，上面两步解决了动态生成与成功注入的两大问题，接下来就要处理JS具体的调用过程。上面，我们知道页面调用Java方法时，匿名js函数在拼接好参数后prompt json数据。prompt消息被Java层的WebChromeClient.onJsPrompt拦截到。</p>
+<figure class="highlight JAVA"><figcaption><span>InjectedChromeClient.java</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="annotation">@Override</span>
+<span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onJsPrompt</span>(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+    result.confirm(mJsCallJava.call(view, message));
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+</pre></td></tr></tbody></table></figure>
+
+<p>而JsCallJava.call的具体实现如下。</p>
+<figure class="highlight JAVA"><figcaption><span>JsCallJava.java</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+</pre></td><td class="code"><pre><span class="keyword">public</span> String <span class="title">call</span>(WebView webView, String jsonStr) {
+    <span class="keyword">if</span> (!TextUtils.isEmpty(jsonStr)) {
+        <span class="keyword">try</span> {
+            JSONObject callJson = <span class="keyword">new</span> JSONObject(jsonStr);
+            String methodName = callJson.getString(<span class="string">"method"</span>);
+            JSONArray argsTypes = callJson.getJSONArray(<span class="string">"types"</span>);
+            JSONArray argsVals = callJson.getJSONArray(<span class="string">"args"</span>);
+            String sign = methodName;
+            <span class="keyword">int</span> len = argsTypes.length();
+            Object[] values = <span class="keyword">new</span> Object[len + <span class="number">1</span>];
+            <span class="keyword">int</span> numIndex = <span class="number">0</span>;
+            String currType;
+
+            values[<span class="number">0</span>] = webView;
+
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; len; k++) {
+                currType = argsTypes.optString(k);
+                <span class="keyword">if</span> (<span class="string">"string"</span>.equals(currType)) {
+                    sign += <span class="string">"_S"</span>;
+                    values[k + <span class="number">1</span>] = argsVals.isNull(k) ? <span class="keyword">null</span> : argsVals.getString(k);
+                } <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">"number"</span>.equals(currType)) {
+                    sign += <span class="string">"_N"</span>;
+                    numIndex = numIndex * <span class="number">10</span> + k + <span class="number">1</span>;
+                } <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">"boolean"</span>.equals(currType)) {
+                    sign += <span class="string">"_B"</span>;
+                    values[k + <span class="number">1</span>] = argsVals.getBoolean(k);
+                } <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">"object"</span>.equals(currType)) {
+                    sign += <span class="string">"_O"</span>;
+                    values[k + <span class="number">1</span>] = argsVals.isNull(k) ? <span class="keyword">null</span> : argsVals.getJSONObject(k);
+                } <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">"function"</span>.equals(currType)) {
+                    sign += <span class="string">"_F"</span>;
+                    values[k + <span class="number">1</span>] = <span class="keyword">new</span> JsCallback(webView, argsVals.getInt(k));
+                } <span class="keyword">else</span> {
+                    sign += <span class="string">"_P"</span>;
+                }
+            }
+
+            Method currMethod = mMethodsMap.get(sign);
+
+            <span class="comment">// 方法匹配失败</span>
+            <span class="keyword">if</span> (currMethod == <span class="keyword">null</span>) {
+                <span class="keyword">return</span> getReturn(jsonStr, <span class="number">500</span>, <span class="string">"not found method("</span> + methodName + <span class="string">") with valid parameters"</span>);
+            }
+            <span class="comment">// 数字类型细分匹配</span>
+            <span class="keyword">if</span> (numIndex &gt; <span class="number">0</span>) {
+                Class[] methodTypes = currMethod.getParameterTypes();
+                <span class="keyword">int</span> currIndex;
+                Class currCls;
+                <span class="keyword">while</span> (numIndex &gt; <span class="number">0</span>) {
+                    currIndex = numIndex - numIndex / <span class="number">10</span> * <span class="number">10</span>;
+                    currCls = methodTypes[currIndex];
+                    <span class="keyword">if</span> (currCls == <span class="keyword">int</span>.class) {
+                        values[currIndex] = argsVals.getInt(currIndex - <span class="number">1</span>);
+                    } <span class="keyword">else</span> <span class="keyword">if</span> (currCls == <span class="keyword">long</span>.class) {
+                        <span class="comment">//WARN: argsJson.getLong(k + defValue) will return a bigger incorrect number</span>
+                        values[currIndex] = Long.parseLong(argsVals.getString(currIndex - <span class="number">1</span>));
+                    } <span class="keyword">else</span> {
+                        values[currIndex] = argsVals.getDouble(currIndex - <span class="number">1</span>);
+                    }
+                    numIndex /= <span class="number">10</span>;
+                }
+            }
+
+            <span class="keyword">return</span> getReturn(jsonStr, <span class="number">200</span>, currMethod.invoke(<span class="keyword">null</span>, values));
+        } <span class="keyword">catch</span> (Exception e) {
+            <span class="comment">//优先返回详细的错误信息</span>
+            <span class="keyword">if</span> (e.getCause() != <span class="keyword">null</span>) {
+                <span class="keyword">return</span> getReturn(jsonStr, <span class="number">500</span>, <span class="string">"method execute error:"</span> + e.getCause().getMessage());
+            }
+            <span class="keyword">return</span> getReturn(jsonStr, <span class="number">500</span>, <span class="string">"method execute error:"</span> + e.getMessage());
+        }
+    } <span class="keyword">else</span> {
+        <span class="keyword">return</span> getReturn(jsonStr, <span class="number">500</span>, <span class="string">"call data empty"</span>);
+    }
+}
+</pre></td></tr></tbody></table></figure>
+
+<p>这是一个完整的解析匹配过程，会依据js层传入的方法名、参数类型列表再次生成方法签名，与之前初始化构造好的缓存对象中的方法匹配。匹配成功后则判断js调用参数类型中是否有number类型，如果有依据Java层方法的定义决定是取int、long还是double类型的值。最后使用调用值列表和方法对象反射执行，返回函数执行的结果。这里有几点需要注意：</p>
+<ul>
+<li>方法反射执行时会将当前WebView的实例放到第一个参数，方便在HostJsScope静态方法依据Context拿到一些相关上下文信息；</li>
+<li>注入类（如HostJsScope）静态方法的参数定义可使用的类型有int/long/double、String、boolean、JSONObject、JsCallback，对应于js层传入的类型为number、string、boolean、object、function，注意<strong>number数字过大时（如时间戳），可能需要先转为string类型（Java方法中参数也须定义为String），避免精度丢失</strong>；</li>
+<li>Java方法的返回值可以是void 或 能转为字符串的类型（如int、long、String、double、float等）或 <strong>可序列化的自定义类型</strong>；</li>
+<li>如果执行失败或找不到调用方法时，Java层会将异常信息传递到JS层， JS匿名函数中会throw抛出错误；</li>
+</ul>
+<h3 id="四、HostApp在页面的使用">四、HostApp在页面的使用</h3>
+<p>有了上面的准备工作，现在我们在页面中就可以很方便地使用HostApp了，而不需要加载任何依赖文件。如li标签的点击：</p>
+<figure class="highlight HTML"><figcaption><span>test.html</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="tag">&lt;<span class="title">ul</span> <span class="attribute">class</span>=<span class="value">"entry"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">li</span> <span class="attribute">onclick</span>=<span class="value">"HostApp.alert('HostApp.alert');"</span>&gt;</span>HostApp.alert<span class="tag">&lt;/<span class="title">li</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">li</span> <span class="attribute">onclick</span>=<span class="value">"HostApp.toast('HostApp.toast');"</span>&gt;</span>HostApp.toast<span class="tag">&lt;/<span class="title">li</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">li</span> <span class="attribute">onclick</span>=<span class="value">"HostApp.testLossTime(new Date().getTime() + '');"</span>&gt;</span>HostApp.testLossTime<span class="tag">&lt;/<span class="title">li</span>&gt;</span> <span class="comment">&lt;!-- 时间戳长整型调用前先转换为string --&gt;</span>
+    <span class="tag">&lt;<span class="title">li</span> <span class="attribute">onclick</span>=<span class="value">"HostApp.toast(HostApp.getIMSI());"</span>&gt;</span>HostApp.getIMSI<span class="tag">&lt;/<span class="title">li</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">ul</span>&gt;</span>
+</pre></td></tr></tbody></table></figure>
+
+<p>但同时有一种业务情景时，页面初始加载完备时就应立即触发的调用，如果我们这样写：</p>
+<figure class="highlight JAVASCRIPT"><figcaption><span>test.html</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre>document.addEventListener(<span class="string">'DOMContentLoaded'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    HostApp.toast(<span class="string">'document ready now'</span>);;
+}, <span class="literal">false</span>);
+</pre></td></tr></tbody></table></figure>
+
+<p>那么HostApp的调用极有可能不成功，因为端注入HostApp-JS片段的时机可能在document.ready前也可能在其后。那么如何解决这个矛盾的问题呢？</p>
+<p>如果document.ready的时候HostApp JS已经注入成功，这种情况OK没有问题。当document.ready的时候HostApp JS还未开始注入，这种情景下我们的js脚本层就需要做出变动，即轮询状态，直到端注入成功或者超时（1.5s），再发生回调。具体实现如下（下面的是以zepto.js的$.ready()函数改造为例）。</p>
+<figure class="highlight JAVASCRIPT"><figcaption><span>zepto.js</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+</pre></td><td class="code"><pre><span class="comment">//针对DOM的一些操作</span>
+<span class="comment">// Define methods that will be available on all</span>
+<span class="comment">// Zepto collections</span>
+$.fn = {
+    <span class="comment">//DOM Ready</span>
+    ready: <span class="function"><span class="keyword">function</span><span class="params">(callback, jumpHostAppInject)</span> {</span>
+        <span class="keyword">var</span> originCb = callback;
+        <span class="keyword">var</span> mcounter = <span class="number">0</span>;
+        <span class="comment">//尝试等待(1500ms超时)让端注入HostApp Js</span>
+        callback = <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+            <span class="keyword">if</span>(!window.HostApp &amp;&amp; mcounter++ <span class="xml"><span class="tag">&lt; <span class="attribute">150</span>)<span class="attribute">setTimeout</span>(<span class="attribute">callback</span>, <span class="attribute">10</span>);<span class="attribute">else</span> <span class="attribute">originCb</span>($);
+        };
+        //是否跳过等待<span class="attribute">HostApp</span>的注入
+        <span class="attribute">if</span> (<span class="attribute">jumpHostAppInject</span>) {
+            <span class="attribute">callback</span> = <span class="attribute">originCb</span>;
+        }
+        <span class="attribute">if</span> (<span class="attribute">readyRE.test</span>(<span class="attribute">document.readyState</span>)) <span class="attribute">callback</span>($); <span class="attribute">else</span> <span class="attribute">document.addEventListener</span>('<span class="attribute">DOMContentLoaded</span>', <span class="attribute">function</span>() {
+                <span class="attribute">callback</span>($)
+            }, <span class="attribute">false</span>);
+        <span class="attribute">return</span> <span class="attribute">this</span>
+    },
+    <span class="attribute">...</span>
+    <span class="attribute">...</span>
+};</span></span>
+</pre></td></tr></tbody></table></figure>
+
+<p>这样的机制也就解释了为什么不把Java层的JS注入放在OnPageFinish了，如果那样页面轮询的次数就会上升，等待的时间就会变长，而且有可能会超时。好了，有了上面的改动，页面初始加载完备时需要立即触发HostApp的调用，如下：</p>
+<figure class="highlight JAVASCRIPT"><figcaption><span>test.html</span></figcaption><table><tbody><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre>&lt;script type=<span class="string">"text/javascript"</span>&gt;
+    $(<span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+        HostApp.alert(<span class="string">"HostApp ready now"</span>);
+    });
+<span class="xml"><span class="tag">&lt;/<span class="title">script</span>&gt;</span></span>
+</pre></td></tr></tbody></table></figure>
+
+<p>更多<a href="https://github.com/pedant/safe-java-js-webview-bridge" target="_blank" rel="external"><strong>使用说明</strong></a>及完整源代码见：<a href="https://github.com/pedant/safe-java-js-webview-bridge" target="_blank" rel="external">Safe Java-JS Bridge In Android WebView[Github]</a></p>
+<p><strong>欢迎转载，请注明出处链接！！！</strong></p>
+
+      
+    </div>
+  
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="http://www.pedant.cn/categories/android/">android</a>
+  </div>
+
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread" id="ds-thread"><div id="ds-reset" class="ds-no-opacity"><div class="ds-meta" style="display: none;"><a href="javascript:void(0)" class="ds-like-thread-button ds-rounded"><span class="ds-icon ds-icon-heart"></span> <span class="ds-thread-like-text">喜欢</span><span class="ds-thread-cancel-like">取消喜欢</span></a><span class="ds-like-panel"><span class="ds-highlight">3</span> 人喜欢</span></div><div class="ds-comments-info"><div class="ds-sort"><a class="ds-order-desc">最新</a><a class="ds-order-asc ds-current">最早</a><a class="ds-order-hot">最热</a></div><ul class="ds-comments-tabs"><li class="ds-tab"><a class="ds-comments-tab-duoshuo ds-current" href="javascript:void(0);"><span class="ds-highlight">8</span>条评论</a></li><li class="ds-tab"><a class="ds-comments-tab-weibo" href="javascript:void(0);"><span class="ds-highlight">1</span>条新浪微博</a></li></ul></div><ul class="ds-comments"><li class="ds-post" data-post-id="1299428130473115649"><div class="ds-post-self" data-post-id="1299428130473115649" data-thread-id="1299428130473115649" data-root-id="0" data-source="duoshuo"><div class="ds-avatar" data-user-id="3648926"><a rel="nofollow author" target="_blank" href="http://t.qq.com/zj19000720" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=3648926&#39;;" title="张婕"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/50" alt="张婕"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://t.qq.com/zj19000720" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=3648926&#39;;" rel="nofollow" target="_blank" data-user-id="3648926">张婕</a></div><p>略复杂，不过多谢楼主分享~</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-07-31T15:23:47+08:00" title="2014年7月31日 下午3:23:47">7月31日</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115650"><div class="ds-post-self" data-post-id="1299428130473115650" data-thread-id="1299428130473115649" data-root-id="1299428130473115649" data-source="duoshuo"><div class="ds-avatar" data-user-id="7848131"><a rel="nofollow author" target="_blank" href="http://www.baidu.com/p/yanyuetians90" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=7848131&#39;;" title="yanyuetians90"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/8b9f79616e7975657469616e733930ea05.jpg" alt="yanyuetians90"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://www.baidu.com/p/yanyuetians90" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=7848131&#39;;" rel="nofollow" target="_blank" data-user-id="7848131">yanyuetians90</a></div><p><a class="ds-comment-context" data-post-id="1299428130473115650" data-parent-id="1299428130473115649">回复 张婕: </a>整个封装过程是比较麻烦，但用起来很简单， 但是整套代码我已经共享在Github了，可以直接拿下来用</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-07-31T19:03:43+08:00" title="2014年7月31日 下午7:03:43">7月31日</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115651"><div class="ds-post-self" data-post-id="1299428130473115651" data-thread-id="1299428130473115649" data-root-id="1299428130473115649" data-source="duoshuo"><div class="ds-avatar" data-user-id="3648926"><a rel="nofollow author" target="_blank" href="http://t.qq.com/zj19000720" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=3648926&#39;;" title="张婕"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/50" alt="张婕"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://t.qq.com/zj19000720" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=3648926&#39;;" rel="nofollow" target="_blank" data-user-id="3648926">张婕</a></div><p><a class="ds-comment-context" data-post-id="1299428130473115651" data-parent-id="1299428130473115650">回复 yanyuetians90: </a>恩，已经在研究了~</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-07-31T20:52:52+08:00" title="2014年7月31日 下午8:52:52">7月31日</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115652"><div class="ds-post-self" data-post-id="1299428130473115652" data-thread-id="1299428130473115649" data-root-id="0" data-source="duoshuo"><div class="ds-avatar" data-user-id="8774315"><a rel="nofollow author" target="_blank" href="http://weibo.com/liangsaifei" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=8774315&#39;;" title="梁_赛飞"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/1" alt="梁_赛飞"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://weibo.com/liangsaifei" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=8774315&#39;;" rel="nofollow" target="_blank" data-user-id="8774315">梁_赛飞</a></div><p>确实 略复杂。。。JS 太久不看了！</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-09-03T10:13:43+08:00" title="2014年9月3日 上午10:13:43">9月3日</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115654"><div class="ds-post-self" data-post-id="1299428130473115654" data-thread-id="1299428130473115649" data-root-id="0" data-source="duoshuo"><div class="ds-avatar" data-user-id="8774315"><a rel="nofollow author" target="_blank" href="http://weibo.com/liangsaifei" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=8774315&#39;;" title="梁_赛飞"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/1" alt="梁_赛飞"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://weibo.com/liangsaifei" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=8774315&#39;;" rel="nofollow" target="_blank" data-user-id="8774315">梁_赛飞</a></div><p>js部分 看不懂。。。如果可以写个 类似说明书那样的，真是极好的！</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-09-03T11:26:50+08:00" title="2014年9月3日 上午11:26:50">9月3日</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115655"><div class="ds-post-self" data-post-id="1299428130473115655" data-thread-id="1299428130473115649" data-root-id="1299428130473115654" data-source="duoshuo"><div class="ds-avatar" data-user-id="7848131"><a rel="nofollow author" target="_blank" href="http://www.baidu.com/p/yanyuetians90" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=7848131&#39;;" title="yanyuetians90"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/8b9f79616e7975657469616e733930ea05.jpg" alt="yanyuetians90"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://www.baidu.com/p/yanyuetians90" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=7848131&#39;;" rel="nofollow" target="_blank" data-user-id="7848131">yanyuetians90</a></div><p><a class="ds-comment-context" data-post-id="1299428130473115655" data-parent-id="1299428130473115654">回复 梁_赛飞: </a>嗯嗯，多谢指点，后续会在github上readme更新说明</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-09-09T11:13:09+08:00" title="2014年9月9日 上午11:13:09">9月9日</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115656"><div class="ds-post-self" data-post-id="1299428130473115656" data-thread-id="1299428130473115649" data-root-id="0" data-source="duoshuo"><div class="ds-avatar" data-user-id="2734249"><a rel="nofollow author" target="_blank" href="http://t.qq.com/b01010101012011" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=2734249&#39;;" title="抱抱"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/noavatar_default.png" alt="抱抱"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://t.qq.com/b01010101012011" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=2734249&#39;;" rel="nofollow" target="_blank" data-user-id="2734249">抱抱</a></div><p>这例子有点复杂。可以写几个简单例子。就直接Js和android怎么用这个框架互相调用就完事了。只要说明怎么调用函数就完了。不需要在函数里面在写那么多东西。免得误导初学者。</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-09-24T15:03:31+08:00" title="2014年9月24日 下午3:03:31">24小时前</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li><li class="ds-post" data-post-id="1299428130473115658"><div class="ds-post-self" data-post-id="1299428130473115658" data-thread-id="1299428130473115649" data-root-id="1299428130473115656" data-source="duoshuo"><div class="ds-avatar" data-user-id="7848131"><a rel="nofollow author" target="_blank" href="http://www.baidu.com/p/yanyuetians90" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=7848131&#39;;" title="yanyuetians90"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/8b9f79616e7975657469616e733930ea05.jpg" alt="yanyuetians90"></a></div><div class="ds-comment-body"><div class="ds-comment-header"><a class="ds-user-name ds-highlight" data-qqt-account="" href="http://www.baidu.com/p/yanyuetians90" onclick="this.href=&#39;http://pedant.duoshuo.com/user-url/?user_id=7848131&#39;;" rel="nofollow" target="_blank" data-user-id="7848131">yanyuetians90</a></div><p><a class="ds-comment-context" data-post-id="1299428130473115658" data-parent-id="1299428130473115656">回复 抱抱: </a>嗯，说得是。后来我也意识到这个问题，所以直接在 <a href="https://github.com/pedant/safe-java-js-webview-bridge/blob/master/README.md" target="_blank" rel="nofollow">https://github.com/pedant/safe-java-js-webview-bridge/blob/master/README.md</a> 上详细说明了使用方法。这篇文章作为项目代码的深度解析，适合想搞懂原理的人，不适合初学者。</p><div class="ds-comment-footer ds-comment-actions"><span class="ds-time" datetime="2014-09-25T09:46:24+08:00" title="2014年9月25日 上午9:46:24">5小时前</span><a class="ds-post-reply" href="javascript:void(0);"><span class="ds-icon ds-icon-reply"></span>回复</a><a class="ds-post-likes" href="javascript:void(0);"><span class="ds-icon ds-icon-like"></span>顶</a><a class="ds-post-repost" href="javascript:void(0);"><span class="ds-icon ds-icon-share"></span>转发</a><a class="ds-post-report" href="javascript:void(0);"><span class="ds-icon ds-icon-report"></span>举报</a></div></div></div></li></ul><div class="ds-paginator" style="display: none;"><div class="ds-border"></div><a data-page="1" href="javascript:void(0);" class="ds-current">1</a></div><a name="respond"></a><div class="ds-login-buttons"><p>社交帐号登录:</p><div class="ds-social-links"><ul class="ds-service-list"><li><a href="http://pedant.duoshuo.com/login/weibo/" rel="nofollow" class="ds-service-link ds-weibo">微博</a></li><li><a href="http://pedant.duoshuo.com/login/qq/" rel="nofollow" class="ds-service-link ds-qq">QQ</a></li><li><a href="http://pedant.duoshuo.com/login/renren/" rel="nofollow" class="ds-service-link ds-renren">人人</a></li><li><a href="http://pedant.duoshuo.com/login/douban/" rel="nofollow" class="ds-service-link ds-douban">豆瓣</a></li><li><a class="ds-more-services" href="javascript:void(0)">更多»</a></li></ul><ul class="ds-service-list ds-additional-services"><li><a href="http://pedant.duoshuo.com/login/kaixin/" rel="nofollow" class="ds-service-link ds-kaixin">开心</a></li><li><a href="http://pedant.duoshuo.com/login/netease/" rel="nofollow" class="ds-service-link ds-netease">网易</a></li><li><a href="http://pedant.duoshuo.com/login/sohu/" rel="nofollow" class="ds-service-link ds-sohu">搜狐</a></li><li><a href="http://pedant.duoshuo.com/login/baidu/" rel="nofollow" class="ds-service-link ds-baidu">百度</a></li><li><a href="http://pedant.duoshuo.com/login/google/" rel="nofollow" class="ds-service-link ds-google">谷歌</a></li></ul></div></div><div class="ds-replybox"><a class="ds-avatar" href="javascript:void(0);" onclick="return false"><img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/noavatar_default.png" alt=""></a><form method="post"><input type="hidden" name="thread_id" value="1299428130473115649">
+<input type="hidden" name="parent_id" value="">
+<input type="hidden" name="nonce" value="5423b71270f5e"><div class="ds-textarea-wrapper ds-rounded-top"><textarea name="message" title="Ctrl+Enter快捷提交" placeholder="说点什么吧…"></textarea><pre class="ds-hidden-text"></pre></div><div class="ds-post-toolbar"><div class="ds-post-options ds-gradient-bg"><span class="ds-sync"></span></div><button class="ds-post-button" type="submit">发布</button><div class="ds-toolbar-buttons"><a class="ds-toolbar-button ds-add-emote" title="插入表情"></a></div></div></form></div><p class="ds-powered-by"><a href="http://duoshuo.com/" target="_blank" rel="nofollow">书呆子们正在使用多说</a></p></div></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"pedant"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+      <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:www.pedant.cn">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="http://www.pedant.cn/categories/android/">android</a><small>7</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="http://www.pedant.cn/tags/cc++/">c/c++</a><small>2</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/java/">java</a><small>5</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/jni/">jni</a><small>2</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/sqlite/">sqlite</a><small>1</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/webview/">webview</a><small>3</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/%E5%BA%93%E7%A7%BB%E6%A4%8D/">库移植</a><small>1</small></li>
+  
+    <li><a href="http://www.pedant.cn/tags/%E6%94%BB%E9%98%B2%E5%AE%89%E5%85%A8/">攻防安全</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+    <li><a href="http://blog.csdn.net/Luoshengyang/" title="老罗的Android之旅">老罗的Android之旅</a></li>
+    <li><a href="http://winterland.me/" title="冬的实验室">冬的实验室</a></li>
+    <li><a href="http://blog.codingnow.com/" title="云风的BLOG">云风的BLOG</a></li>
+</ul>
+</div>
+
+</aside>
+    
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="aligncenter">
+  
+  © 2014 Yanyuetian
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/jquery.min.js"></script>
+<script src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/jquery.imagesloaded.min.js"></script>
+
+<script type="text/javascript">
+    var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+    document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F3bf6ccabac425846443702b3673e9f8a' type='text/javascript'%3E%3C/script%3E"));
+</script><script src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/h.js" type="text/javascript"></script>
+
+
+
+<div id="scroll2top" style="display: block; opacity: 0;">
+<img src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/arrow.png">
+</div>
+<script src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/scroll2top.js"></script>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config;executed=true">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config;executed=true">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config;executed=true">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script src="./在WebView中如何让JS与Java安全地互相调用   书呆子精神院_files/MathJax.js"></script>
+  <!-- Baidu Button BEGIN -->
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"16"},"slide":{"type":"slide","bdImg":"1","bdPos":"left","bdTop":"250"}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+ <!-- Baidu Button END -->
+
+
+
+
+
+
+
+<div class="bdshare-slide-button-box bdshare-slide-style-l1" style="top: 250px; width: 0px; left: 0px;" data-bd-bind="1411626768215"><a href="http://www.pedant.cn/2014/07/04/webview-js-java-interface-research/#" onclick="return false;" class="bdshare-slide-button" style="right: -24px;"></a><div class="bdshare-slide-list-box" style="width: 0px; display: none;"><div class="bdshare-slide-top">分享到</div><div class="bdshare-slide-list"><ul class="bdshare-slide-list-ul" style="width: 116px;"></ul></div><div class="bdshare-slide-bottom" style="width: 116px;"><a href="http://www.pedant.cn/2014/07/04/webview-js-java-interface-research/#" onclick="return false;" class="slide-more" data-cmd="more">更多...</a></div></div></div></body></html>

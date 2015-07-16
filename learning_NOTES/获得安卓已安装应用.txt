@@ -1,0 +1,40 @@
+	public void getAppInfoList(){
+		List<PackageInfo> packages = getActivity().getPackageManager().getInstalledPackages(0);
+		PackageInfo packageInfo;
+		mInternalListAppInfo.clear();
+		mSdcardListAppInfo.clear();
+		mTotalListAppInfo.clear();
+		int size = packages.size();
+		Log.d(TAG, "packages length:"+size);
+		for (int i = 0; i < size; i++) {
+	        packageInfo = packages.get(i);
+	        /*值>0表示系统预装，等于0表示手动安装*/
+	        if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+	            if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) != 0) {
+	            	Log.d(TAG, "EXTERNAL"+i);
+	                mAppInfo = getInfoOfApps(packageInfo);
+	                mSdcardListAppInfo.add(mAppInfo);
+	            } else {
+	            	Log.d(TAG, "INTERNAL"+i);
+	                mAppInfo = getInfoOfApps(packageInfo);
+	                mInternalListAppInfo.add(mAppInfo);
+	            }   
+	        }
+	        else{
+	        	Log.d(TAG, "(packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0:"+((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0));
+	        }
+	        
+	    }
+		if(mInternalListAppInfo.size()>0){
+			mTotalListAppInfo.addAll(mInternalListAppInfo);
+		}
+		if(mSdcardListAppInfo.size()>0){
+			mTotalListAppInfo.addAll(mSdcardListAppInfo);
+		}
+		Log.d(TAG, "current size of mTotalListAppInfo is:"+mTotalListAppInfo.size());
+        if(mTotalListAppInfo.size()>0){
+        	 Log.d(TAG, "current running thread name is:"+Thread.currentThread().getName());
+            mHandler.sendEmptyMessage(REFRESH_ALL_APPS_LIST);
+        }
+		
+	}

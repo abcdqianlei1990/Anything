@@ -1,0 +1,10 @@
+1,通过打开adb shell 然后执行ps命令，我们可以看到首先执行的是init方法！然后我们找到init.c这个文件,
+2，然后走init里面的main方法，在这main方法里面执行makdir进行创建很多的文件夹，和挂载一些目录，
+3，然后回去初始化init.rc这个配置文件！在这个配置文件里面回去启动孵化器这个服务，这个服务会去启动app_process这个文件夹，这个文件夹里面有个app_main.cpp这个文件！
+4,然后在app_main.cpp这个c文件里面在main方法里面它会去启动安卓的虚拟机，然后安卓虚拟机会去启动os.zygoteinit这个服务！
+5，zygoteinit这是个java代码写的，然后我们找到了main方法，在这个方法里面我们看到他首先设置虚拟机的最小堆内存为5兆，然后走到preloadclasses（）这个方法来加载安卓系统所有的2000多个类通过类加载器加载进来,比如activity,contentx,http,...（其实没有必要一下子全部加载下来，我们可以等用到的时候在加载也可以！）
+6,然后又走preloadresources（）这个方法来预加载安卓中定义好的资源比如颜色，图片，系统的id等等。。。都加载了！（其实这也是没必要的！ ）
+7，然后又走startSystemServer(),这个方法来加载系统的服务！他会先使用natvieJNI去调用C去初始化界面和声音的服务，这就是我们为什么先听到声音和界面的原因！
+8,最后等服务加载完成后也就启动起来了!
+
+linux启动->init进程启动(加载init.rc配置)->zygote启动->systemServer启动,systemServer会通过init1和init2启动navite世界和java世界。

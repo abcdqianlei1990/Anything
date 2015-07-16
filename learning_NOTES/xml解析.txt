@@ -1,0 +1,411 @@
+DOM解析：
+	优点：将整个文档读入内存方便操作，自持修改、删除和重新排列等功能；
+	缺点：将这个文档读入内存，保留了过多的不需要的节点，浪费内存和空间。
+
+SAX解析：
+	优点：不用实现调入整个文档，占用资源少
+	缺点：不像DOM解析一样将文档长期驻留在内存中，数据不是持久的。如果事件过后没有保存数据，数据就会丢失。
+
+SAX解析XML文档采用事件驱动模式。什么是事件驱动模式？它将XML文档转换成一系列的事件，由单独的事件处理器来决定如何处理。
+
+基于事件驱动的处理模式主要是基于事件源和事件处理器（或者叫监听器）来工作的。一个可以产生事件的对象叫做事件源，
+而一个可以针对事件做出响应的对象就被叫做事件处理器。
+
+在SAX接口中，事件源是org.xml.sax包中的XMLReader,他通过parse()方法开始解析XML文档，并根据文档内容产生事件。
+而事件处理器则是org.xml.sax包中的ContentHandler、DTDHandler、ErrorHandler,以及EntityResolver这四个接口。
+他们分别处理事件源在解析过程中产生不同类的事件（其中DTDHandler为解析文档DTD时所用）
+ContentHandler：处理跟文档内容有关的所有时间。
+		（1）文档的开始和结束
+		（2）ML元素的开始和结束
+		（3）可忽略的实体
+		（4）名称空间前缀映射开始和结束
+		（5）处理指令
+		（6）字符数据和可忽略的空格
+DTDHandler：处理对文档DTD解析时产生的相应事件
+ErrorHandler：处理xml解析时候的错误。如果一个应用程序没有注册一个错误处理器类，会发生不可预料的解析器行为。
+EntityResolver：处理外部实体。
+
+------------------------------------------ContentHandler接口方法说明------------------------------------------------------------------------------------
+
+
+//设置一个可以定位文档内容事件发生位置的定位器对象
+public void setDocumentLocator(Locator locator)
+
+//用于处理文档解析开始事件
+public void startDocument()throws SAXException
+
+//处理元素开始事件，从参数中可以获得元素所在名称空间的uri，元素名称，属性类表等信息
+public void startElement(String namespacesURI , String localName , String qName , Attributes atts) throws SAXException
+
+//处理元素结束事件，从参数中可以获得元素所在名称空间的uri，元素名称等信息
+public void endElement(String namespacesURI , String localName , String qName) throws SAXException
+
+//处理元素的字符内容，从参数中可以获得内容
+public void characters(char[] ch , int start , int length)  throws SAXException
+
+---------------------------------XMLReader中的方法------------------------------------------------------------
+//注册处理XML文档解析事件ContentHandler
+public void setContentHandler(ContentHandler handler)
+
+
+//开始解析一个XML文档
+public void parse(InputSorce input) throws SAXException
+
+========================================================SAX实现实体解析的步骤========================================================================================
+（一）第一步：新建一个工厂类SAXParserFactory
+SAXParserFactory factory = SAXParserFactory.newInstance();
+
+（二）第二步：让工厂类产生一个SAX的解析类SAXParser
+SAXParser parser = factory.newSAXParser();
+
+（三）第三步：从SAXPsrser中得到一个XMLReader实例
+XMLReader reader = parser.getXMLReader();
+
+（四）第四步：把自己写的handler注册到XMLReader中，一般最重要的就是ContentHandler
+RSSHandler handler = new RSSHandler();
+reader.setContentHandler(handler);
+
+（五）第五步：将一个xml文档或者资源变成一个java可以处理的InputStream流后，解析正式开始
+parser.parse(is);
+
+=================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+    <channel>
+        <title>RSS 解析练习</title>
+        <description>hehehaha</description>
+        <link>http://www.cnblogs.com/felix-hua/</link>
+        <language>zh-cn</language>
+
+
+        <item>
+            <title><![CDATA[头条]]></title>
+            <link>http://mc.cz001.com.cn/images/menu/23_active.png</link>
+            <category>0</category>
+            <description>描述详细信息的</description>
+            <pubDate>2012-01-09</pubDate>
+        </item>
+        
+        <item>
+            <title><![CDATA[新闻]]></title>
+            <link>http://mc.cz001.com.cn/images/menu/23_active.png</link>
+            <category>0</category>
+            <description>描述详细信息的</description>
+            <pubDate>2012-01-09</pubDate>
+        </item>
+        
+        <item>
+            <title><![CDATA[首页]]></title>
+            <link>http://mc.cz001.com.cn/images/menu/23_active.png</link>
+            <category>0</category>
+            <description>描述详细信息的</description>
+            <pubDate>2012-01-09</pubDate>
+        </item>
+        
+        <item>
+            <title><![CDATA[财经]]></title>
+            <link>http://mc.cz001.com.cn/images/menu/23_active.png</link>
+            <category>0</category>
+            <description>描述详细信息的</description>
+            <pubDate>2012-01-09</pubDate>
+        </item>
+
+-----------------------------------RSSFeed-------------------------------------------
+1、RSSFeed,与完整的xml文档相对应；
+
+2、RSSItem,与item标签内的信息相对应。
+
+public class RSSFeed {
+    private String title;
+    private int itemcount;
+    private List<RSSItem> itemlist;
+    
+    public RSSFeed(){
+        itemlist = new Vector<RSSItem>(0);
+    }
+    
+    /**
+     * 负责将一个RSSItem加入到RSSFeed类中
+     * @param item
+     * @return
+     */
+    public int addItem(RSSItem item){
+        itemlist.add(item);
+        itemcount++;
+        return itemcount;
+    }
+    
+    public RSSItem getItem(int location){
+        return itemlist.get(location);
+    }
+    
+    public List<RSSItem> getAllItems(){
+        return itemlist;
+    }
+    
+    /**
+     * 负责从RSSFeed类中生成列表所需要的数据
+     * @return
+     */
+    public List getAllItemForListView(){
+        List<Map<String, Object>> data = new ArrayList<Map<String,Object>>();
+        int size = itemlist.size();
+        for(int i=0 ; i<size ; i++){
+            HashMap<String , Object> item = new HashMap<String, Object>();
+            item.put(RSSItem.TITLE, itemlist.get(i).getTitle());
+            item.put(RSSItem.PUBDATE, itemlist.get(i).getPubdate());
+            data.add(item);
+        }
+        return data;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public int getItemcount() {
+        return itemcount;
+    }
+
+    public void setItemcount(int itemcount) {
+        this.itemcount = itemcount;
+    }
+
+    public List<RSSItem> getItemlist() {
+        return itemlist;
+    }
+
+    public void setItemlist(List<RSSItem> itemlist) {
+        this.itemlist = itemlist;
+    }
+    
+}
+------------------------RSSItem ----------------------------------
+public class RSSItem {
+    public static String TITLE = "title";
+    public static String PUBDATE = "pubdate";
+    public String title;
+    public String description;
+    public String link;
+    public String category;
+    public String pubdate;
+    public RSSItem() {
+    }
+    public String getTitle() {
+        return title;
+    }
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    public String getDescription() {
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    public String getLink() {
+        return link;
+    }
+    public void setLink(String link) {
+        this.link = link;
+    }
+    public String getCategory() {
+        return category;
+    }
+    public void setCategory(String category) {
+        this.category = category;
+    }
+    public String getPubdate() {
+        return pubdate;
+    }
+    public void setPubdate(String pubdate) {
+        this.pubdate = pubdate;
+    }
+    
+    
+}
+
+-------------------------------RSSHandler------------------------------------------
+public class RSSHandler extends DefaultHandler{
+    RSSFeed RssFeed;
+    RSSItem RssItem;
+    final int RSS_TITLE = 1;
+    final int RSS_LINK = 2;
+    final int RSS_DESCRIPTION = 3;
+    final int RSS_CATEGORY = 4;
+    final int RSS_PUBDATE = 5;
+    int currentstate = 0;
+    
+    public RSSHandler(){}
+    
+    public RSSFeed getFeed(){
+        return RssFeed;
+    }
+    
+    @Override
+    public void startDocument() throws SAXException {
+        // TODO Auto-generated method stub
+        RssFeed = new RSSFeed();
+        RssItem = new RSSItem();
+    }
+    
+    @Override
+    public void endDocument() throws SAXException {
+        // TODO Auto-generated method stub
+        
+    }
+    
+    @Override
+    public void startElement(String uri, String localName, String qName,
+            Attributes attributes) throws SAXException {
+        // TODO Auto-generated method stub
+        if(localName.equals("channel")){
+            currentstate = 0;
+            return;
+        }
+        if(localName.equals("item")){
+            RssItem = new RSSItem();
+            return;
+        }
+        if(localName.equals("title")){
+            currentstate = RSS_TITLE;
+            return;
+        }
+        if(localName.equals("description")){
+            currentstate = RSS_DESCRIPTION;
+            return;
+        }
+        if(localName.equals("link")){
+            currentstate = RSS_LINK;
+            return;
+        }
+        if(localName.equals("category")){
+            currentstate = RSS_CATEGORY;
+            return;
+        }
+        if(localName.equals("pubDate")){
+            currentstate = RSS_PUBDATE;
+            return;
+        }
+        currentstate = 0;
+    }
+    
+    @Override
+    public void endElement(String uri, String localName, String qName)
+            throws SAXException {
+        // TODO Auto-generated method stub
+        if(localName.equals("item")){
+            RssFeed.addItem(RssItem);
+            return;
+        }
+    }
+    
+    @Override
+    public void characters(char[] ch, int start, int length)
+            throws SAXException {
+        // TODO Auto-generated method stub
+        String theString = new String(ch, start, length);
+        switch(currentstate){
+        case RSS_TITLE:
+            RssItem.setTitle(theString);
+            currentstate = 0;
+            break;
+        case RSS_DESCRIPTION:
+            RssItem.setDescription(theString);
+            currentstate = 0;
+            break;
+        case RSS_LINK:
+            RssItem.setLink(theString);
+            currentstate = 0;
+            break;
+        case RSS_PUBDATE:
+            RssItem.setPubdate(theString);
+            currentstate = 0;
+            break;
+        case RSS_CATEGORY:
+            RssItem.setCategory(theString);
+            currentstate = 0;
+            break;
+        default:
+            return;
+        }
+    }
+}
+
+
+实现一个ContentHandler一般要一下几个步骤：
+
+1、声明一个类，继承DefaultHandler。DefaultHandler是一个基类，这个类里面简单实现了一个ContentHandler。我们只需要重写里面的方法即可。
+
+2、重写 startDocument() 和 endDocument()，一般解析将正式解析之前的一些初始化工资放到startDocument()里面，收尾的工作放到endDocument()里面。
+
+3、重写startElement(),XML解析器遇到XML里面的tag时就会调用这个函数。经常在这个函数内是通过localName俩进行判断而操作一些数据。
+
+4、重写characters()方法，这是一个回调方法。解析器执行完startElement()后，解析完节点的内容后就会执行这个方法，并且参数ch[]就是节点的内容。这个例子里我们根据currentstate的不同，来判断当前那个tag的内容，并放到合适的实体类中。
+
+5、重写endElement()方法，这个方法与startElement()相对应，解析完一个tag节点后，执行这个方法。再找个例子中，如果解析一个item结束，就将RSSIiem添加到RSSFeed中。
+
+--------------------------Activity 展示结果-----------------------------------------
+public class SAXReaderActivity extends Activity {
+    /** Called when the activity is first created. */
+
+    public String rssUrl = "http://mc.cz001.com.cn/a/indexconfig/index.rss";
+    public RSSFeed feed;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        feed = getFeed(rssUrl);
+        showList();
+    }
+
+    public RSSFeed getFeed(String rssUrl) {
+        try {
+// 这里我们实现了本地解析，所以注掉了这个取网络数据的。
+//            URL url = new URL(rssUrl);
+            SAXParserFactory factory = SAXParserFactory.newInstance();	//产生一个SAX解析工厂对象
+            SAXParser parser = factory.newSAXParser();			//产生一个SAX解析对象
+            //XMLReader reader = parser.getXMLReader();			//通过SAX解析对象获得XMLReader
+
+	    //讲自定义的Handler注册到XMLReader中
+            RSSHandler handler = new RSSHandler();
+            //reader.setContentHandler(handler);
+
+            InputSource is = new InputSource(this.getClassLoader().getResourceAsStream("rssxml.xml"));//取得本地xml文件
+		
+	    //parser(InputStream is, DefaultHandler handler);
+	    parser(is,handler);
+            //reader.parse(is);
+            return handler.getFeed();
+        } catch (ParserConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SAXException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void showList() {
+        ListView rsslistview = (ListView) findViewById(R.id.rssList);
+        TextView rsstitle = (TextView) findViewById(R.id.rsstitle);
+        if (feed == null) {
+            rsstitle.setText("访问失败...");
+            return;
+        }
+        SimpleAdapter adapter = new SimpleAdapter(this,
+                feed.getAllItemForListView(),
+                android.R.layout.simple_list_item_2, new String[] {
+                        RSSItem.TITLE, RSSItem.PUBDATE }, new int[] {
+                        android.R.id.text1, android.R.id.text2 });
+        rsslistview.setAdapter(adapter);
+    }
+}

@@ -1,0 +1,26 @@
+/*
+ * get the external storage of the device
+ * */
+	public void setSDCardStorageInfo(){
+		if(SDCardExist()){
+	        String path = Environment.getExternalStorageDirectory().toString();
+	        mSDCardFileStats = new StatFs(path);
+	        mSDCardFileStats.restat(path);
+	        try {
+	            mSDTotalStorage = (long) mSDCardFileStats.getBlockCount()
+	                    * mSDCardFileStats.getBlockSize();
+	            mSDFreeStorage = (long) mSDCardFileStats.getAvailableBlocks()
+	                    * mSDCardFileStats.getBlockSize();
+
+	        } catch (IllegalArgumentException e) {
+	        }
+	        String totalString = Formatter.formatShortFileSize(getActivity(), mSDTotalStorage);
+	        String freeString = Formatter.formatShortFileSize(getActivity(), mSDFreeStorage);
+	        mSdFreeSpace.setText(freeString);
+	        mSdTotalSpace.setText(totalString);
+		}else{
+	        mSdFreeSpace.setText("0.00B");
+	        mSdTotalSpace.setText("0.00B");
+		}
+
+    }

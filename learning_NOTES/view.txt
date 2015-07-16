@@ -1,0 +1,7 @@
+
+==============================焦点问题====================================================
+当新载入一个有EditText的界面时候，焦点默认在EditText上，这时候系统会弹出软键盘，影响美观
+这时候就需要将焦点设置到其它的view上. view.setFoucsable(true) view.requestFoucs();
+
+view.setFoucsable(true) 和view.requestFoucs()的区别：
+前者是设置控件能获得焦点，而后者是让控件获得焦点

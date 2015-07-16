@@ -1,0 +1,7 @@
+ ApplicationInfoFragment fragment = new ApplicationInfoFragment();
+            fragment.setArguments(arguments);
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            transaction.replace(R.id.item_detail_container, fragment);
+            //加入到回退栈，能在返回的时候显示上一个fragment
+            transaction.addToBackStack(null);
+            transaction.commit();

@@ -1,0 +1,7 @@
+ Environment.getDataDirectory() = /data
+ Environment.getDownloadCacheDirectory() = /cache
+ Environment.getExternalStorageDirectory() = /mnt/sdcard
+ Environment.getRootDirectory() = /system
+ context.getCacheDir() = /data/data/com.mt.mtpp/cache
+ context.getExternalCacheDir() = /mnt/sdcard/Android/data/com.mt.mtpp/cache
+ context.getFilesDir() = /data/data/com.mt.mtpp/files

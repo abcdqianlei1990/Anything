@@ -1,0 +1,8 @@
+
+===================Activity销毁时候将消息从消息队列中清除==========================================
+@Override
+	protected void onDestroy()
+	{
+	    handler.removeMessages(FINISH_FLAG);
+		super.onDestroy();
+	}

@@ -1,0 +1,38 @@
+我们可以通过JNI实现一些用java语言不便实现的功能。通常有以下几种情况我们需要使用JNI来实现。   标准的java类库没有提供你的应用程序所需要的功能，通常这些功能是平台相关的  你希望使用一些已经有的类库或者应用程序，而他们并非用java语言编写的   程序的某些部分对速度要求比较苛刻，你选择用汇编或者c语言来实现并在java语言中调用他们      在《java核心技术》中，作者提到JNI的时候，建议不到万不得已不要使用JNI技术，一方面它需要你把握更多的知识才可以驾驭，一方面使用了JNI你的程序就会丧失可移植性。在本文我们跳过JNI的底层机制，读者最好先把它想象为本地代码和java代码的粘合剂
+
+class HelloWorld{
+
+	/*native关键字表示该方法是用java以外的语言实现的*/
+	public native void displayHelloWorld();
+
+	static{
+		/*系统加载hello共享库，hello.dll*/
+		System.loadLibrary("hello");
+	}
+
+	public static void main(){
+		new HelloWorld().displayHelloWorld();
+	}
+
+}
+
+javac HelloWorld.java 编译，生成.class文件
+
+接下来生成.h文件：javah HelloWorld
+
+C语言实现方法
+新建hello.c
+#include<stdio.h>
+#include "HelloWorld.h"
+#include<jni.h>
+JNIEXPORT void JNICALL 
+Java_HelloWorld_displayHelloWorld(JNIEnv *env, jobject obj){
+	printf("hello world!\n");
+	return;
+}
+
+编译hello.c文件生成hello.dll文件
+
+把上面生成的hello.dll文件复制到我们的工作目录，这时候我们的目录中包括HelloWorld.java，HelloWorld.class和hello.dll文件
+
+此时再执行HelloWorld就能看到结果：java HelloWorld

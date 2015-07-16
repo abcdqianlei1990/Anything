@@ -1,0 +1,19 @@
+google新推出的 android-percent-support.jar
+
+里面有PercentFrameLayout 和 PercentRelativeLayout 
+
+该2个布局继承自FrameLayout 和 RelativeLayout 
+
+其中的重要属性：
+app:layout_heightPercent="10%"	//表示高度占屏幕10%
+app:layout_widthPercent="100%"	////表示宽度占屏幕100%
+
+使用该属性之前需要将宽和高设置为0dp(类似weight的使用)
+android:layout_width="0dp"
+android:layout_height="0dp"
+
+实现过程：
+LayoutParams中属性的获取
+onMeasure中，改变params.width为百分比计算结果，测量
+如果测量值过小且设置的w/h是wrap_content，重新测量
+onLayout中，重置params.w/h为布局文件中编写的值

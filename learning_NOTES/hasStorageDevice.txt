@@ -1,0 +1,31 @@
+private boolean hasStorageDevice() {
+        mMountedVolumes.clear();
+        MStorageManager sm = MStorageManager.getInstance(getActivity());
+        for (StorageVolume volume : mStorageManager.getVolumeList()) {
+            String path = volume.getPath();
+            /*if mounted*/
+            if (Environment.MEDIA_MOUNTED.equals(sm.getVolumeState(path))) {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("volume_path", path);
+
+                String label = sm.getVolumeLabel(path);
+                if (TextUtils.isEmpty(label)) {
+                    if (Environment.getExternalStorageDirectory().getAbsolutePath().equals(path)) {
+                        map.put("volume_lable", getString(R.string.sdcard_lable));
+                    } else {
+                        map.put("volume_lable", getString(R.string.mobile_stoarge_device));
+                    }
+                } else {
+                    map.put("volume_lable", label);
+                }
+
+                mMountedVolumes.add(map);
+            }
+        }
+        // do not have any storage
+        if (mMountedVolumes.size() <= 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }

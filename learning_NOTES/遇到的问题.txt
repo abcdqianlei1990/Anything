@@ -1,0 +1,85 @@
+问题：
+1.listview加载图片的时候，OOM
+
+需要加载图片的时候先在内存中找，如果找不到去本地找，还是找不到的话就从网络下载。将不经常变化的图片缓存到sd卡上，变化的缓存到内存中
+一次只加载一个屏幕能显示的最多数量的item
+下载好图片后，先缩放压缩图片，存入缓存中。
+imageCache = new HashMap<String, SoftReference<Drawable>>();  
+
+--------------------------------------------------------------------
+2.scrollview嵌套listview，数据显示不全且滑动不了
+a.srcollview中只能放置linearlayout，因为其他的Layout(如RelativeLayout)没有重写onMeasure()
+设置完ListView的Adapter后，根据ListView的子项目重新计算ListView的高度，然后把高度再作为LayoutParams设置给ListView，这样它的高度就正确了。
+/**
+* 动态设置ListView的高度
+* @param listView
+*/
+public static void setListViewHeightBasedOnChildren(ListView listView) {
+    if(listView == null) return;
+    ListAdapter listAdapter = listView.getAdapter();
+    if (listAdapter == null) {
+        // pre-condition
+        return;
+    }
+    int totalHeight = 0;
+    for (int i = 0; i < listAdapter.getCount(); i++) {
+        View listItem = listAdapter.getView(i, null, listView);
+        listItem.measure(0, 0);
+        totalHeight += listItem.getMeasuredHeight();
+    }
+    ViewGroup.LayoutParams params = listView.getLayoutParams();
+    params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
+    listView.setLayoutParams(params);
+}
+b.当touch到内部的listview时候scrollview.requestDisallowInterceptTouchEvent(false)
+  自定义listview，重写OnInterceptTouchEvent方法，判断按下和弹起事件
+--------------------------------------------------------
+3.事件处理
+
+
+
+图片压缩：缩放->压缩
+newOpts.inPreferredConfig = Config.RGB_565;//降低图片从ARGB888到RGB565
+private Bitmap compressImage(Bitmap image) {  
+  
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中  
+        int options = 100;  
+        while ( baos.toByteArray().length / 1024>100) {  //循环判断如果压缩后图片是否大于100kb,大于继续压缩         
+            baos.reset();//重置baos即清空baos  
+            image.compress(Bitmap.CompressFormat.JPEG, options, baos);//这里压缩options%，把压缩后的数据存放到baos中  
+            options -= 10;//每次都减少10  
+        }  
+        ByteArrayInputStream isBm = new ByteArrayInputStream(baos.toByteArray());//把压缩后的数据baos存放到ByteArrayInputStream中  
+        Bitmap bitmap = BitmapFactory.decodeStream(isBm, null, null);//把ByteArrayInputStream数据生成图片  
+        return bitmap;  
+    }  
+private Bitmap getimage(String srcPath) {  
+        BitmapFactory.Options newOpts = new BitmapFactory.Options();  
+        //开始读入图片，此时把options.inJustDecodeBounds 设回true了  
+        newOpts.inJustDecodeBounds = true;  
+        Bitmap bitmap = BitmapFactory.decodeFile(srcPath,newOpts);//此时返回bm为空  
+          
+        newOpts.inJustDecodeBounds = false;  
+        int w = newOpts.outWidth;  
+        int h = newOpts.outHeight;  
+        //现在主流手机比较多是800*480分辨率，所以高和宽我们设置为  
+        float hh = 800f;//这里设置高度为800f  
+        float ww = 480f;//这里设置宽度为480f  
+        //缩放比。由于是固定比例缩放，只用高或者宽其中一个数据进行计算即可  
+        int be = 1;//be=1表示不缩放  
+        if (w > h && w > ww) {//如果宽度大的话根据宽度固定大小缩放  
+            be = (int) (newOpts.outWidth / ww);  
+        } else if (w < h && h > hh) {//如果高度高的话根据宽度固定大小缩放  
+            be = (int) (newOpts.outHeight / hh);  
+        }  
+        if (be <= 0)  
+            be = 1;  
+        newOpts.inSampleSize = be;//设置缩放比例  
+        //重新读入图片，注意此时已经把options.inJustDecodeBounds 设回false了  
+        bitmap = BitmapFactory.decodeFile(srcPath, newOpts);  
+        return compressImage(bitmap);//压缩好比例大小后再进行质量压缩  
+    }  
+
+-------------------------------------------------------
+屏幕适配的问题：自定义view，重写onFinishInflate(),在该方法中根据屏幕大小对view进行缩放；针对不同分辨率定义不同的dimens文件

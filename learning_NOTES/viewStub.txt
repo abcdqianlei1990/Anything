@@ -1,0 +1,11 @@
+=============延迟加载===================
+
+<ViewStub
+android:id="@+id/map_stub"
+android:layout_width="fill_parent"
+android:layout_height="fill_parent"
+android:layout="@layout/map"		//---->填充的视图
+android:inflateId="@+id/map_view" />	//---->viewstub对象执行inflate()或setVisibility()后的返回的id
+
+
+如果在某种情境下需要填充map视图，那么 mViewStub = findViewById(R.id.map_stub) 然后mViewStub.setVisibility(View.visible);即可

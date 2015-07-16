@@ -1,0 +1,98 @@
+一、采用Handler与线程的sleep(long)方法
+二、采用Handler的postDelayed(Runnable, long)方法
+三、采用Handler与timer及TimerTask结合的方法
+
+=============================(1)采用Handle与线程的sleep(long)方法==================================
+
+
+1. 定义一个Handler类，用于处理接受到的Message。
+
+Handler handler = new Handler(){
+	public void handleMessage(Message mes){
+		super.handleMessage(mes);
+	}
+};
+
+2. 新建一个实现Runnable接口的工作线程类
+
+public class MyThread implements Runnable {
+    
+	@Override
+    public void run() {
+       
+ 		    while (true) {
+ 
+		           try {
+ 
+					Thread.sleep(10000);// 线程暂停10秒，单位毫秒
+                
+					Message message = new Message();
+                
+					message.what = 1;
+                
+					handler.sendMessage(message);// 发送消息
+            
+				} catch (InterruptedException e) {
+                
+					// TODO Auto-generated catch block
+                
+					e.printStackTrace();
+            
+				}
+        
+			}
+    
+	}
+
+}
+
+3.调用： new MyThread().start();
+
+4.这样启动后，工作线程就会每十秒发送一个message，就实现了定时功能
+
+================================(2)采用Handler的postDelayed(Runnable, long)方法=================================
+
+
+
+1.定义一个handler类
+
+Handler handler=new Handler();
+Runnable runnable = new Runnable(){
+	@Override
+	public void run(){
+		handler.postDelayed(this,2000);
+	}
+
+};
+
+2.启动定时器
+
+handler.postDelayed(runnable, 2000);//每两秒执行一次runnable.
+
+3.停止定时器
+
+handler.removeCallbacks(runnable);
+
+=============================(3)采用Handler与timer及TimerTask结合的方法============================================
+
+1. 定义定时器、定时器任务及Handler句柄
+private final Timer timer = new Timer();
+private TimerTask task; 
+Handler handler = new Handler(){
+	public void handleMessage(Message mes){
+		super.handleMessage(mes);
+	}
+};
+
+2.初始化定时器任务
+task = new TimerTask(){
+	 @Override
+	 public void run() {
+		Message message = new Message(); 
+		message.what = 1; 
+		handler.sendMessage(message); 
+	}
+}
+
+3.启动定时器
+timer.schedule(task, 2000, 2000);	//延迟2s执行，2s再执行

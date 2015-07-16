@@ -1,0 +1,9 @@
+会创建中间左边和右边3个fragment，即是说当显示中间的fragment的时候，它左右两边的fragment
+
+已经被创建了，所以中间往左右滑动的时候，非常顺畅，当滑动到左边的fragment显示时候，右边的
+
+fragment被销毁。由于会缓存当前页面之外的页面的信息，所以会有内存消耗。
+
+可以使用FragmentStatePagerAdapter来替代，使用方法相同。当fragment不可见的时候，整个fragment
+
+会被销毁，只会保存fragment的状态state。

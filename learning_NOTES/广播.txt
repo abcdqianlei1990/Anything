@@ -1,0 +1,40 @@
+无序广播， 有序广播，粘性广播（5.0，api21后不建议使用），本地广播(localBroadCast)
+粘性广播:intent会保留到onReceive()方法执行完后才结束
+注册方式：动态注册和静态注册 。动态注册广播接收优先级要高于静态注册
+	静态注册的广播接收器，即使APP退出，仍然会接收广播。但是在3.0后，广播有添加状态：FALG_INCLUDE_STOPPED_PACKAGES、FLAG_EXCLUDE_STOPPED_PACKAGES
+	系统默认添加FLAG_EXCLUDE_STOPPED_PACKAGES状态，所以静态注册的接收器在app退出后不能接收到系统广播
+
+
+
+Local Broadcast：App应用内广播（此处的App应用以App应用进程为界）
+
+非本地广播的安全隐患：
+1.其他App可能会针对性的发出与当前App intent-filter相匹配的广播，由此导致当前App不断接收到广播并处理；
+
+2.其他App可以注册与当前App一致的intent-filter用于接收广播，获取广播具体信息。
+
+无论哪种情形，这些安全隐患都确实是存在的。由此，最常见的增加安全性的方案是：
+
+1.对于同一App内部发送和接收广播，将exported属性人为设置成false，使得非本App内部发出的此广播不被接收；
+
+2.在广播发送和接收时，都增加上相应的permission，用于权限验证；
+
+3.发送广播时，指定特定广播接收器所在的包名，具体是通过intent.setPackage(packageName)指定在，这样此广播将只会发送到此包中的App内与之相匹配的有效广播接收器中。
+
+对于LocalBroadcastManager方式发送的应用内广播，只能通过LocalBroadcastManager动态注册的ContextReceiver才有可能接收到（静态注册或其他方式动态注册的ContextReceiver是接收不到的）。
+
+1 //registerReceiver(mBroadcastReceiver, intentFilter);
+ 2 //注册应用内广播接收器
+ 3 localBroadcastManager = LocalBroadcastManager.getInstance(this);
+ 4 localBroadcastManager.registerReceiver(mBroadcastReceiver, intentFilter);
+ 5         
+ 6 //unregisterReceiver(mBroadcastReceiver);
+ 7 //取消注册应用内广播接收器
+ 8 localBroadcastManager.unregisterReceiver(mBroadcastReceiver);
+ 9 
+10 Intent intent = new Intent();
+11 intent.setAction(BROADCAST_ACTION);
+12 intent.putExtra("name", "qqyumidi");
+13 //sendBroadcast(intent);
+14 //发送应用内广播
+15 localBroadcastManager.sendBroadcast(intent);
