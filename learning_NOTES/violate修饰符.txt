@@ -1,0 +1,44 @@
+violate修饰的变量保证对该变量的相关操作都是对该变量所在的堆内存的操作
+
+例1：
+main(){
+	private boolean flag = true;
+
+	new Thread(new Runnable(){
+
+		@Overrid
+		public void run(){
+			while(flag){
+				Log.d(TAG,"....");
+			}
+		}
+		}){
+	
+	}
+	
+	flag = false;
+
+}
+例1中虽然后面将flag置为false了，但是子线程仍然不会停下来。因为每个子线程如果使用主线程的变量，都会自己拷贝一份到自己的内存空间中，主线程中对flag的修改，并不会影响到子线程中内存空间的值
+
+
+例1：
+main(){
+	private violate boolean flag = true;
+
+	new Thread(new Runnable(){
+
+		@Overrid
+		public void run(){
+			while(flag){
+				Log.d(TAG,"....");
+			}
+		}
+		}){
+	
+	}
+	
+	flag = false;
+
+}
+加上violate修饰后，子线程和主线程都会使用同一块内存

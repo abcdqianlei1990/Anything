@@ -1,3 +1,5 @@
+EventBus即是在一个单例中保存一个map对象，map中保存一些方法，post的时候根据实参去反射调用对应的方法。
+
 EventBus.getDefault()  //获得EventBus的实例，单例模式
 
 public static EventBus getDefault(){
@@ -11,13 +13,27 @@ public static EventBus getDefault(){
 
 }
 
-register()方法通过反射将所有已onEvent开头的方法都保存起来
+register()方法通过反射将所有已onEvent开头的方法都保存起来,首先会通过注册传进来的参数，在该class中找到所有onEvent的方法，然后保存到一个list中
+	然后将事件处理类型eventType和订阅者都保存到map中
 
-
-onEvent():在哪个线程发布事件，就在该线程中执行该方法，不能进行耗时操作。也就是说发布事件和接收事件是在同一个线程中
+//4种类型的事件处理方法  ，表示订阅某个eventType类型的事件，默认优先级是0，优先级高先执行，且可以取消该事件继续传递
+onEventPostThread():在哪个线程发布事件，就在该线程中执行该方法，不能进行耗时操作。也就是说发布事件和接收事件是在同一个线程中
 
 onEventMainThread():接收事件的方法运行在UI线程中，不能进行耗时操作
 
 onEventBackground():接收事件的方法将在子线程中执行，如果发布事件的地方本来就是子线程，那么就在该子线程中执行
 
 onEventAsync():不论发布事件是否是在子线程中，都将开启新的子线程来执行
+
+-=======================使用=================================
+先假设有个fragment: public class AAAfragment extends Fragment{}
+
+使用之前首先需要注册（订阅）
+EventBus.getDefault().register(this);	//这里的this表示订阅者，这里表示在AAAfragment中订阅事件
+
+然后需要在AAAfragment中实现一个onEvent开头的方法，表示成功订阅到事件后的处理，根据需求选择一种事件处理类型进行实现。
+
+在AAAfragment销毁的时候要取消注册，调用EventBus.getDefault().unRegister(this);
+
+
+
